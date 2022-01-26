@@ -5,50 +5,37 @@ try:
     from airflow import DAG
     from airflow.operators.python_operator import PythonOperator
     from datetime import datetime
-    import boto3
     import requests
-    import spotipy.util as util
+    import boto3
     import psycopg2
     import ast
-    from queries import create_table, search_table, insert_query
+    from queries import weather_create_table, weather_insert_query
+    from datetime import datetime
 
     print("All Dag modules are ok ......")
 except Exception as e:
     print("Error  {} ".format(e))
 
-
-def send_queue():
-    username = 'BigPapa'
-    client_id = 'ce8d047b71eb4ba099b2ed70e5406f0c'
-    client_secret = 'c25837880182401b9a890d0a3c9ddfd2'
-    redirect_uri = 'http://localhost:7777/callback'
-    scope = 'user-read-recently-played'
-    token = util.prompt_for_user_token(username=username,
-                                       scope=scope,
-                                       client_id=client_id,
-                                       client_secret=client_secret,
-                                       redirect_uri=redirect_uri)
-    # Header for Spotify API
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "Bearer {token}".format(token=token)
-    }
-
-    # Request to get recently played songs
-    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?", headers=headers)
-
-    # saving the recently played songs into a json object
-    song_data = r.json()
+def get_weather():
+# base URL
+    BASE_URL = "https://api.openweathermap.org/data/2.5/weather?"
+    CITY = "Hickory"
+    API_KEY = "cb9b93afbdaac3ce6e3230b3e0b8b05c"
+    # upadting the URL
+    URL = BASE_URL + "q=" + CITY + "&appid=" + API_KEY
+    # HTTP request
+    data = requests.get(URL)
+    # getting data in the json format
+    data_dict = data.json()
+    
 
     sqs = boto3.resource('sqs', region_name='us-east-1',
                     aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
                     aws_secret_access_key="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")
 
-    queue = sqs.get_queue_by_name(QueueName='spotify')
+    queue = sqs.get_queue_by_name(QueueName='weather')
     
-    queue.send_message(MessageBody=f'{song_data}')
-    print('[x] Sent!')
+    queue.send_message(MessageBody=f'{data_dict}')
 
 
 # Variables to connect to postgresql
@@ -74,7 +61,7 @@ def recieve_q():
                        aws_access_key_id="AKIAZQL7U7P2KZDZG5HU",
                        aws_secret_access_key="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")
     # Url for the SQS queue
-    QueueUrl = 'https://sqs.us-east-1.amazonaws.com/653639613428/spotify'
+    QueueUrl = 'https://sqs.us-east-1.amazonaws.com/653639613428/weather'
     # Receiving one message from the queue
     response = sqs.receive_message(
         QueueUrl=QueueUrl,
@@ -96,39 +83,31 @@ def recieve_q():
     data_dict = ast.literal_eval(data)
 
     # Saving data to the datalake
-    outfile = open('spotify_data_lake.txt', 'a')
+    outfile = open('weather_data_lake.txt', 'a')
     now = datetime.now().replace(microsecond=0)
     outfile.write(f'{now} - {data_dict} \n')
 
     # Making sure spotify table is created
-    PG_CURS.execute(create_table)
-    # Querying the database for "played_at"
-    PG_CURS.execute(search_table)
+    PG_CURS.execute(weather_create_table)
 
-    # Fetching all the "played_at" values
-    result = PG_CURS.fetchall()
-    # Storing the last 20 "played_at" value as a list inside a list.
-    played_at_lists = [list(i) for i in result]
 
-    # For loop to get each song from the dictionary
-    for song in data_dict["items"]:
-        # If a songs 'played_at' value is in the list
-        # Pass these songs because they are already in the database
-        if [song['played_at']] in played_at_lists:
-            pass
-        # Otherwise, grab data and save them to the database
-        else:
-            # Saving Data to Variables
-            name = song["track"]["name"]
-            artist_names = song["track"]["album"]["artists"][0]["name"]
-            album_name = song["track"]["album"]["name"]
-            duration_ms = song['track']['duration_ms']
-            played_at = song["played_at"]
+    # Saving Data to Variables
 
-            # Saving variables as a tuple to add to the database
-            record_to_insert = (name, artist_names, album_name, duration_ms, played_at)
-            # Executing adding data to the Database
-            PG_CURS.execute(insert_query, record_to_insert)
+    temp_int = int(data_dict['main']['temp'])
+    feels_like_int = int(data_dict['main']['feels_like'])
+
+
+    weather_desc = data_dict['weather'][0]['description']
+    temp = (temp_int - 273) * 1.8 + 32
+
+    feels_like = (feels_like_int - 273) * 1.8 + 32
+    humidity = data_dict['main']['humidity']
+    date = datetime.now().replace(microsecond=0)
+
+    # Saving variables as a tuple to add to the database
+    record_to_insert = (weather_desc, temp, feels_like, humidity, date)
+    # Executing adding data to the Database
+    PG_CURS.execute(weather_insert_query, record_to_insert)
     # Print each time a Message from the Queue has gone through.
     print('[x] Received!')
     # Saving changes to the database
@@ -136,10 +115,9 @@ def recieve_q():
     # Deleting the message from the queue now that everything is done
     sqs.delete_message(QueueUrl=QueueUrl, ReceiptHandle=receipt_handle)
 
-
 with DAG(
-        dag_id="spotify_dag",
-        schedule_interval="*/5 * * * *",
+        dag_id="weather_dag",
+        schedule_interval="*/2 * * * *",
         default_args={
             "owner": "airflow",
             "retries": 1,
@@ -150,7 +128,7 @@ with DAG(
 
     send = PythonOperator(
         task_id="send",
-        python_callable=send_queue,
+        python_callable=get_weather,
         provide_context=True,
     )
 
@@ -158,5 +136,7 @@ with DAG(
         task_id="recieve",
         python_callable=recieve_q,
         provide_context=True,
-    )  
+    )
+
+
 send >> recieve

@@ -1,4 +1,5 @@
 import pika
+import boto3
 import requests
 import spotipy.util as util
 
@@ -27,16 +28,12 @@ def send_queue():
     # saving the recently played songs into a json object
     song_data = r.json()
 
-    # Setting up RabbitMq Parameters
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
+    sqs = boto3.resource('sqs', region_name='us-east-1',
+                    aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
+                    aws_secret_access_key="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")
 
-    channel.queue_declare(queue='spotify-queue')
+    queue = sqs.get_queue_by_name(QueueName='spotify')
+    
+    queue.send_message(MessageBody=f'{song_data}')
+    print('[x] Sent!')
 
-    channel.basic_publish(exchange='',
-                          routing_key='spotify-queue',
-                          body=str(song_data))
-    print("[x] Sent")
-
-    connection.close()
-send_queue()

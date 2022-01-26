@@ -1,54 +1,8 @@
-
-
-try:
-    from datetime import timedelta
-    from airflow import DAG
-    from airflow.operators.python_operator import PythonOperator
-    from datetime import datetime
-    import boto3
-    import requests
-    import spotipy.util as util
-    import psycopg2
-    import ast
-    from queries import create_table, search_table, insert_query
-
-    print("All Dag modules are ok ......")
-except Exception as e:
-    print("Error  {} ".format(e))
-
-
-def send_queue():
-    username = 'BigPapa'
-    client_id = 'ce8d047b71eb4ba099b2ed70e5406f0c'
-    client_secret = 'c25837880182401b9a890d0a3c9ddfd2'
-    redirect_uri = 'http://localhost:7777/callback'
-    scope = 'user-read-recently-played'
-    token = util.prompt_for_user_token(username=username,
-                                       scope=scope,
-                                       client_id=client_id,
-                                       client_secret=client_secret,
-                                       redirect_uri=redirect_uri)
-    # Header for Spotify API
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "Bearer {token}".format(token=token)
-    }
-
-    # Request to get recently played songs
-    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?", headers=headers)
-
-    # saving the recently played songs into a json object
-    song_data = r.json()
-
-    sqs = boto3.resource('sqs', region_name='us-east-1',
-                    aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
-                    aws_secret_access_key="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")
-
-    queue = sqs.get_queue_by_name(QueueName='spotify')
-    
-    queue.send_message(MessageBody=f'{song_data}')
-    print('[x] Sent!')
+import boto3
+import psycopg2
+import ast
+from queries import create_table, search_table, insert_query
+from datetime import datetime
 
 
 # Variables to connect to postgresql
@@ -60,6 +14,7 @@ HOST = 'castor.db.elephantsql.com'
 # Connecting to PostgresSQL
 PG_CONN = psycopg2.connect(dbname=DBNAME, user=USER, password=PASSWORD, host=HOST)
 PG_CURS = PG_CONN.cursor()
+
 
 def recieve_q():
     """ This function is going to connect to the RabbitMQ
@@ -136,27 +91,4 @@ def recieve_q():
     # Deleting the message from the queue now that everything is done
     sqs.delete_message(QueueUrl=QueueUrl, ReceiptHandle=receipt_handle)
 
-
-with DAG(
-        dag_id="spotify_dag",
-        schedule_interval="*/5 * * * *",
-        default_args={
-            "owner": "airflow",
-            "retries": 1,
-            "retry_delay": timedelta(minutes=5),
-            "start_date": datetime(2022, 1, 16),
-        },
-        catchup=False) as f:
-
-    send = PythonOperator(
-        task_id="send",
-        python_callable=send_queue,
-        provide_context=True,
-    )
-
-    recieve = PythonOperator(
-        task_id="recieve",
-        python_callable=recieve_q,
-        provide_context=True,
-    )  
-send >> recieve
+recieve_q()
