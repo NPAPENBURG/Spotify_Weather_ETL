@@ -1,5 +1,5 @@
 
-# Spotify-Recommender App
+# Spotify Songs and Weather ETL
 
 #### The purpose of this was to gain experince creating a near production ETL Pipeline using Spotifys API and a Weather API
 
