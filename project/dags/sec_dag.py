@@ -20,7 +20,7 @@ def get_weather():
 # base URL
     BASE_URL = "https://api.openweathermap.org/data/2.5/weather?"
     CITY = "Hickory"
-    API_KEY = "cb9b93afbdaac3ce6e3230b3e0b8b05c"
+    API_KEY = ""
     # upadting the URL
     URL = BASE_URL + "q=" + CITY + "&appid=" + API_KEY
     # HTTP request
@@ -29,9 +29,9 @@ def get_weather():
     data_dict = data.json()
     
 
-    sqs = boto3.resource('sqs', region_name='us-east-1',
-                    aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
-                    aws_secret_access_key="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")
+    sqs = boto3.resource('sqs', region_name='',
+                    aws_access_key_id="", 
+                    aws_secret_access_key="")
 
     queue = sqs.get_queue_by_name(QueueName='weather')
     
@@ -39,9 +39,9 @@ def get_weather():
 
 
 # Variables to connect to postgresql
-DBNAME = 'iymiryxu'
-USER = 'iymiryxu'
-PASSWORD = 'UEoTjdSGpoVGDP6HE2p6BDwQa3ldFFDa'
+DBNAME = ''
+USER = ''
+PASSWORD = ''
 HOST = 'castor.db.elephantsql.com'
 
 # Connecting to PostgresSQL
@@ -57,11 +57,11 @@ def recieve_q():
     the loop skips that song. If the song is not in the Database it gets added.
     """
     # Getting SQS account keys
-    sqs = boto3.client('sqs', region_name='us-east-1',
-                       aws_access_key_id="AKIAZQL7U7P2KZDZG5HU",
-                       aws_secret_access_key="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")
+    sqs = boto3.client('sqs', region_name='',
+                       aws_access_key_id="",
+                       aws_secret_access_key="")
     # Url for the SQS queue
-    QueueUrl = 'https://sqs.us-east-1.amazonaws.com/653639613428/weather'
+    QueueUrl = ''
     # Receiving one message from the queue
     response = sqs.receive_message(
         QueueUrl=QueueUrl,
