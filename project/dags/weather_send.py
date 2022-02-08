@@ -7,7 +7,7 @@ def get_weather():
 # base URL
     BASE_URL = "https://api.openweathermap.org/data/2.5/weather?"
     CITY = "Hickory"
-    API_KEY = "cb9b93afbdaac3ce6e3230b3e0b8b05c"
+    API_KEY = ""
     # upadting the URL
     URL = BASE_URL + "q=" + CITY + "&appid=" + API_KEY
     # HTTP request
@@ -16,9 +16,9 @@ def get_weather():
     data_dict = data.json()
     
 
-    sqs = boto3.resource('sqs', region_name='us-east-1',
-                    aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
-                    aws_secret_access_key="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")
+    sqs = boto3.resource('', region_name='',
+                    aws_access_key_id="", 
+                    aws_secret_access_key="")
 
     queue = sqs.get_queue_by_name(QueueName='weather')
     
