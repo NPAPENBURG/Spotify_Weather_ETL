@@ -35,3 +35,7 @@
     `$ pipenv install pandas, python-dotenv, requests, spotipy, psycopg2, ast, boto3, airflow
 - Step 8: Add API information into the dag files
 - Step 9: Run the Dags
+
+![Diagram](/diagram.png)
+
+![Visuals](/spotifypowerbi.png)
