@@ -28,7 +28,7 @@
 - Step 3: Get API from Amazon SQS at https://console.aws.amazon.com/sqs/
 - Step 4: Get a free PostgreSQL database at https://www.elephantsql.com/
 - Step 5: Clone repository
-    `$ git clone https://github.com/spotify-recommender/spotify-recommender-5.git`
+    `$ git clone https://github.com/NPAPENBURG/Spotify_Weather_ETL`
 - Step 6: Start VM
     `$ pipenv shell`
 - Step 7: Install package dependencies
