@@ -18,9 +18,9 @@ except Exception as e:
 
 
 def send_queue():
-    username = 'BigPapa'
-    client_id = 'ce8d047b71eb4ba099b2ed70e5406f0c'
-    client_secret = 'c25837880182401b9a890d0a3c9ddfd2'
+    username = ''
+    client_id = ''
+    client_secret = ''
     redirect_uri = 'http://localhost:7777/callback'
     scope = 'user-read-recently-played'
     token = util.prompt_for_user_token(username=username,
@@ -41,9 +41,9 @@ def send_queue():
     # saving the recently played songs into a json object
     song_data = r.json()
 
-    sqs = boto3.resource('sqs', region_name='us-east-1',
-                    aws_access_key_id="AKIAZQL7U7P2KZDZG5HU", 
-                    aws_secret_access_key="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")
+    sqs = boto3.resource('sqs', region_name='',
+                    aws_access_key_id="", 
+                    aws_secret_access_key="")
 
     queue = sqs.get_queue_by_name(QueueName='spotify')
     
@@ -52,9 +52,9 @@ def send_queue():
 
 
 # Variables to connect to postgresql
-DBNAME = 'iymiryxu'
-USER = 'iymiryxu'
-PASSWORD = 'UEoTjdSGpoVGDP6HE2p6BDwQa3ldFFDa'
+DBNAME = ''
+USER = ''
+PASSWORD = ''
 HOST = 'castor.db.elephantsql.com'
 
 # Connecting to PostgresSQL
@@ -70,11 +70,11 @@ def recieve_q():
     the loop skips that song. If the song is not in the Database it gets added.
     """
     # Getting SQS account keys
-    sqs = boto3.client('sqs', region_name='us-east-1',
-                       aws_access_key_id="AKIAZQL7U7P2KZDZG5HU",
-                       aws_secret_access_key="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")
+    sqs = boto3.client('sqs', region_name='',
+                       aws_access_key_id="",
+                       aws_secret_access_key="")
     # Url for the SQS queue
-    QueueUrl = 'https://sqs.us-east-1.amazonaws.com/653639613428/spotify'
+    QueueUrl = ''
     # Receiving one message from the queue
     response = sqs.receive_message(
         QueueUrl=QueueUrl,
