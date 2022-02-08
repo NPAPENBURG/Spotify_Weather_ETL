@@ -6,10 +6,10 @@ from datetime import datetime
 
 
 # Variables to connect to postgresql
-DBNAME = 'iymiryxu'
-USER = 'iymiryxu'
-PASSWORD = 'UEoTjdSGpoVGDP6HE2p6BDwQa3ldFFDa'
-HOST = 'castor.db.elephantsql.com'
+DBNAME = ''
+USER = ''
+PASSWORD = ''
+HOST = ''
 
 # Connecting to PostgresSQL
 PG_CONN = psycopg2.connect(dbname=DBNAME, user=USER, password=PASSWORD, host=HOST)
@@ -25,11 +25,11 @@ def recieve_q():
     the loop skips that song. If the song is not in the Database it gets added.
     """
     # Getting SQS account keys
-    sqs = boto3.client('sqs', region_name='us-east-1',
-                       aws_access_key_id="AKIAZQL7U7P2KZDZG5HU",
-                       aws_secret_access_key="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")
+    sqs = boto3.client('sqs', region_name='',
+                       aws_access_key_id="",
+                       aws_secret_access_key="")
     # Url for the SQS queue
-    QueueUrl = 'https://sqs.us-east-1.amazonaws.com/653639613428/spotify'
+    QueueUrl = ''
     # Receiving one message from the queue
     response = sqs.receive_message(
         QueueUrl=QueueUrl,
